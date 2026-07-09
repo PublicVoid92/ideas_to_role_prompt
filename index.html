@@ -515,6 +515,9 @@ function togglePrompt(header) {
 const GENERIC_UI_KEYWORDS = ["app", "website", "tool", "platform", "portal", "system", "tracker",
                               "manager", "dashboard", "chat", "social", "market", "shop"];
 
+// Shared AI-detection regex — used by generateSummary, generateMemory, and FEATURE_MAP
+const IS_AI_REGEX = /\bai\b|\bml\b|llm|gpt|openai|intelligent|smart|predict|recommend/i;
+
 // Feature-map for deriveFeatures() — moved to module level to avoid repeated allocation
 const FEATURE_MAP = [
   [/auth|login|sign.?in|register|account/, "User authentication and account management"],
@@ -533,7 +536,7 @@ const FEATURE_MAP = [
   [/export|download|csv|pdf/, "Data export and reporting"],
   [/api|webhook|integration/, "Third-party API and webhook integrations"],
   [/role|permission|admin|access/, "Role-based access control"],
-  [/\bai\b|\bml\b|recommend|predict|generate|smart/, "AI-powered features and recommendations"],
+  [IS_AI_REGEX, "AI-powered features and recommendations"],
   [/mobile|responsive/, "Mobile-responsive interface"],
 ];
 
@@ -607,7 +610,7 @@ function generateSummary(idea) {
   else if (lower.includes("personal") || lower.includes("individual")) users = "Individual users";
 
   // Derive scope
-  const isAI = /\bai\b|\bml\b|llm|gpt|openai|intelligent|smart|predict|recommend/i.test(idea);
+  const isAI = IS_AI_REGEX.test(idea);
   const isRealtime = /real.?time|live|instant|websocket|streaming/i.test(idea);
   const isMobile = /mobile|ios|android|phone|app/i.test(idea);
   const isBackend = /api|server|database|backend|auth|storage/i.test(idea);
@@ -660,7 +663,7 @@ function titleCase(s) {
    MEMORY GENERATION
    ═══════════════════════════════════════════════════════════════ */
 function generateMemory(idea, summary, roles) {
-  const isAI = /\bai\b|\bml\b|llm|gpt|openai|intelligent|smart|predict|recommend/i.test(idea);
+  const isAI = IS_AI_REGEX.test(idea);
   const isBackend = /api|server|database|backend|auth|storage/i.test(idea);
   const isMobile = /mobile|ios|android|phone/i.test(idea);
 
