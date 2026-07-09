@@ -26,7 +26,7 @@ Given any software idea you describe in plain text, the tool automatically gener
 3. Click **⚡ Generate System**.
 4. Explore the generated sections, copy individual role prompts, or click **⬇ Download JSON** for the full export.
 
-> **Tip:** Press `Ctrl+Enter` (or `Cmd+Enter` on Mac) to generate directly from the text area.
+> **Tip:** Press `Ctrl+Enter` (Windows/Linux) or `Cmd+Enter` (Mac) to generate directly from the text area.
 
 ---
 

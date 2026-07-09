@@ -475,9 +475,9 @@ const ALL_ROLES = {
     responsibility: "Integrate machine learning models, LLM APIs, recommendation systems or data pipelines.",
     scope: "Model selection, prompt engineering, API integration, data preprocessing, evaluation.",
     deps: ["System Architect", "Backend Developer"],
-    keywords: ["ai", "ml", "machine learning", "llm", "gpt", "openai", "recommendation",
-               "prediction", "nlp", "neural", "intelligent", "smart", "classify", "detect",
-               "sentiment", "model", "train", "inference", "generate", "chatbot", "bot"]
+    keywords: ["ai", "ml", "machine learning", "llm", "gpt", "openai",
+               "nlp", "neural network", "deep learning", "recommendation engine",
+               "sentiment", "chatbot", "ai-powered", "generative", "embeddings"]
   }
 };
 
@@ -511,9 +511,48 @@ function togglePrompt(header) {
   body.classList.toggle("open");
 }
 
+// Generic UI keywords — moved to module level to avoid repeated allocation
+const GENERIC_UI_KEYWORDS = ["app", "website", "tool", "platform", "portal", "system", "tracker",
+                              "manager", "dashboard", "chat", "social", "market", "shop"];
+
+// Feature-map for deriveFeatures() — moved to module level to avoid repeated allocation
+const FEATURE_MAP = [
+  [/auth|login|sign.?in|register|account/, "User authentication and account management"],
+  [/dashboard/, "Overview dashboard with key metrics"],
+  [/notif|alert|remind/, "Notification and reminder system"],
+  [/search|filter|find/, "Search and filtering capabilities"],
+  [/upload|file|attach|image|video|photo/, "File / media upload and management"],
+  [/comment|reply|discuss|thread/, "Commenting and threaded discussions"],
+  [/react|like|vote|rating/, "Reaction and rating system"],
+  [/analytics|report|stats|insight|chart/, "Analytics and reporting"],
+  [/chat|message|dm|inbox/, "Real-time or async messaging"],
+  [/team|collaborate|invite|member/, "Team collaboration and member management"],
+  [/task|todo|checklist|kanban|board/, "Task and progress tracking"],
+  [/calendar|schedule|event|booking/, "Calendar and scheduling"],
+  [/payment|subscription|billing|stripe/, "Payment and subscription management"],
+  [/export|download|csv|pdf/, "Data export and reporting"],
+  [/api|webhook|integration/, "Third-party API and webhook integrations"],
+  [/role|permission|admin|access/, "Role-based access control"],
+  [/\bai\b|\bml\b|recommend|predict|generate|smart/, "AI-powered features and recommendations"],
+  [/mobile|responsive/, "Mobile-responsive interface"],
+];
+
 /* ═══════════════════════════════════════════════════════════════
    ROLE SELECTION — pick roles relevant to the idea
    ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Returns true if the lowercase idea text contains the keyword.
+ * For short keywords (≤3 chars) uses word-boundary matching to avoid
+ * false positives (e.g. "ml" inside "html", "ai" inside "email").
+ */
+function matchesKeyword(lowerIdea, kw) {
+  if (kw.length <= 3) {
+    return new RegExp("\\b" + kw + "\\b").test(lowerIdea);
+  }
+  return lowerIdea.includes(kw);
+}
+
 function selectRoles(idea) {
   const lower = idea.toLowerCase();
   const selected = [];
@@ -524,15 +563,13 @@ function selectRoles(idea) {
       selected.push(name);
       continue;
     }
-    if (def.keywords.some(kw => lower.includes(kw))) {
+    if (def.keywords.some(kw => matchesKeyword(lower, kw))) {
       selected.push(name);
     }
   }
 
-  // Always include Frontend if idea mentions "app", "website", "tool", "platform"
-  const genericUI = ["app", "website", "tool", "platform", "portal", "system", "tracker",
-                     "manager", "dashboard", "chat", "social", "market", "shop"];
-  if (!selected.includes("Frontend Developer") && genericUI.some(k => lower.includes(k))) {
+  // Always include Frontend if idea mentions a generic UI keyword
+  if (!selected.includes("Frontend Developer") && GENERIC_UI_KEYWORDS.some(k => lower.includes(k))) {
     selected.push("Frontend Developer");
   }
 
@@ -570,7 +607,7 @@ function generateSummary(idea) {
   else if (lower.includes("personal") || lower.includes("individual")) users = "Individual users";
 
   // Derive scope
-  const isAI = /\bai\b|ml\b|llm|gpt|openai|intelligent|smart|predict|recommend/i.test(idea);
+  const isAI = /\bai\b|\bml\b|llm|gpt|openai|intelligent|smart|predict|recommend/i.test(idea);
   const isRealtime = /real.?time|live|instant|websocket|streaming/i.test(idea);
   const isMobile = /mobile|ios|android|phone|app/i.test(idea);
   const isBackend = /api|server|database|backend|auth|storage/i.test(idea);
@@ -598,28 +635,7 @@ function deriveFeatures(idea) {
   const lower = idea.toLowerCase();
   const features = [];
 
-  const featureMap = [
-    [/auth|login|sign.?in|register|account/, "User authentication and account management"],
-    [/dashboard/, "Overview dashboard with key metrics"],
-    [/notif|alert|remind/, "Notification and reminder system"],
-    [/search|filter|find/, "Search and filtering capabilities"],
-    [/upload|file|attach|image|video|photo/, "File / media upload and management"],
-    [/comment|reply|discuss|thread/, "Commenting and threaded discussions"],
-    [/react|like|vote|rating/, "Reaction and rating system"],
-    [/analytics|report|stats|insight|chart/, "Analytics and reporting"],
-    [/chat|message|dm|inbox/, "Real-time or async messaging"],
-    [/team|collaborate|invite|member/, "Team collaboration and member management"],
-    [/task|todo|checklist|kanban|board/, "Task and progress tracking"],
-    [/calendar|schedule|event|booking/, "Calendar and scheduling"],
-    [/payment|subscription|billing|stripe/, "Payment and subscription management"],
-    [/export|download|csv|pdf/, "Data export and reporting"],
-    [/api|webhook|integration/, "Third-party API and webhook integrations"],
-    [/role|permission|admin|access/, "Role-based access control"],
-    [/ai|recommend|predict|generate|smart/, "AI-powered features and recommendations"],
-    [/mobile|responsive/, "Mobile-responsive interface"],
-  ];
-
-  for (const [pattern, label] of featureMap) {
+  for (const [pattern, label] of FEATURE_MAP) {
     if (pattern.test(lower)) features.push(label);
   }
 
@@ -644,7 +660,7 @@ function titleCase(s) {
    MEMORY GENERATION
    ═══════════════════════════════════════════════════════════════ */
 function generateMemory(idea, summary, roles) {
-  const isAI = /\bai\b|ml\b|llm|gpt|openai|intelligent|smart|predict|recommend/i.test(idea);
+  const isAI = /\bai\b|\bml\b|llm|gpt|openai|intelligent|smart|predict|recommend/i.test(idea);
   const isBackend = /api|server|database|backend|auth|storage/i.test(idea);
   const isMobile = /mobile|ios|android|phone/i.test(idea);
 
