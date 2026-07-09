@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ideas → Role Prompt Generator</title>
+  <style>
+    /* ── reset & base ──────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #232736;
+      --border: #2e3248;
+      --accent: #7c6bff;
+      --accent2: #5eead4;
+      --text: #e2e8f0;
+      --text-muted: #7c8ba1;
+      --danger: #f87171;
+      --success: #4ade80;
+      --radius: 10px;
+      --shadow: 0 4px 24px rgba(0,0,0,.4);
+    }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── layout ────────────────────────────────────────────── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    header .logo { font-size: 1.6rem; }
+    header h1 { font-size: 1.25rem; font-weight: 700; letter-spacing: -.5px; }
+    header p  { font-size: .85rem; color: var(--text-muted); margin-top: 2px; }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+    /* ── input card ─────────────────────────────────────────── */
+    .idea-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      margin-bottom: 32px;
+      box-shadow: var(--shadow);
+    }
+    .idea-card label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 10px;
+      font-size: .95rem;
+    }
+    .idea-card textarea {
+      width: 100%;
+      min-height: 120px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      color: var(--text);
+      font-size: .95rem;
+      font-family: inherit;
+      resize: vertical;
+      transition: border-color .2s;
+      line-height: 1.6;
+    }
+    .idea-card textarea:focus { outline: none; border-color: var(--accent); }
+    .idea-card textarea::placeholder { color: var(--text-muted); }
+
+    .btn-row { display: flex; gap: 12px; margin-top: 16px; flex-wrap: wrap; }
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      font-size: .9rem;
+      font-weight: 600;
+      padding: 10px 22px;
+      transition: opacity .2s, transform .1s;
+    }
+    button:hover  { opacity: .88; }
+    button:active { transform: scale(.97); }
+    .btn-primary  { background: var(--accent); color: #fff; }
+    .btn-outline  { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .btn-success  { background: var(--success); color: #000; }
+
+    /* ── output sections ────────────────────────────────────── */
+    #output { display: none; }
+
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 24px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 18px 24px;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface2);
+    }
+    .section-header:hover { background: #2a2e42; }
+    .section-header .title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .section-header .badge {
+      background: var(--accent);
+      color: #fff;
+      font-size: .72rem;
+      padding: 2px 8px;
+      border-radius: 99px;
+    }
+    .chevron { transition: transform .25s; font-size: .9rem; color: var(--text-muted); }
+    .section-header.open .chevron { transform: rotate(180deg); }
+    .section-body { padding: 24px; display: none; }
+    .section-body.open { display: block; }
+
+    /* ── idea summary ───────────────────────────────────────── */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 650px) { .summary-grid { grid-template-columns: 1fr; } }
+    .summary-item {
+      background: var(--surface2);
+      border-radius: 8px;
+      padding: 16px;
+      border: 1px solid var(--border);
+    }
+    .summary-item h4 { font-size: .8rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent2); margin-bottom: 8px; }
+    .summary-item p, .summary-item ul { font-size: .9rem; color: var(--text-muted); line-height: 1.65; }
+    .summary-item ul { padding-left: 18px; }
+    .summary-item ul li { margin-bottom: 4px; }
+    .summary-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--accent2);
+    }
+
+    /* ── roles ──────────────────────────────────────────────── */
+    .role-list { display: flex; flex-direction: column; gap: 12px; }
+    .role-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 18px;
+    }
+    .role-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .role-icon { font-size: 1.4rem; }
+    .role-name { font-weight: 700; font-size: 1rem; }
+    .role-detail { font-size: .88rem; color: var(--text-muted); line-height: 1.6; }
+    .role-detail strong { color: var(--text); }
+    .role-deps { margin-top: 8px; font-size: .82rem; }
+    .dep-badge {
+      display: inline-block;
+      background: rgba(124,107,255,.15);
+      color: var(--accent);
+      border: 1px solid rgba(124,107,255,.3);
+      border-radius: 99px;
+      padding: 2px 9px;
+      margin: 2px 3px 2px 0;
+      font-size: .78rem;
+    }
+
+    /* ── prompts ────────────────────────────────────────────── */
+    .prompt-list { display: flex; flex-direction: column; gap: 16px; }
+    .prompt-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .prompt-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      cursor: pointer;
+      background: rgba(255,255,255,.03);
+      border-bottom: 1px solid var(--border);
+    }
+    .prompt-card-header:hover { background: rgba(255,255,255,.06); }
+    .prompt-card-header .role-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: .95rem;
+    }
+    .prompt-body { display: none; padding: 18px; }
+    .prompt-body.open { display: block; }
+    .prompt-body pre {
+      background: #0d0f17;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 16px;
+      font-size: .82rem;
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+      color: #c9d1e0;
+      font-family: 'Consolas', 'Courier New', monospace;
+      max-height: 420px;
+      overflow-y: auto;
+    }
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      padding: 5px 14px;
+      font-size: .78rem;
+      border-radius: 6px;
+    }
+    .copy-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+    .copy-btn.copied { border-color: var(--success); color: var(--success); }
+
+    /* ── memory ─────────────────────────────────────────────── */
+    .memory-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 650px) { .memory-grid { grid-template-columns: 1fr; } }
+    .mem-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+    .mem-item h4 { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--accent2); margin-bottom: 8px; }
+    .mem-item p, .mem-item ul { font-size: .88rem; color: var(--text-muted); line-height: 1.65; }
+    .mem-item ul { padding-left: 18px; }
+    .mem-item ul li { margin-bottom: 4px; }
+
+    /* ── changelog ──────────────────────────────────────────── */
+    .changelog-version { margin-bottom: 22px; }
+    .version-tag {
+      font-size: .75rem;
+      font-weight: 700;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      color: var(--accent);
+      background: rgba(124,107,255,.12);
+      border: 1px solid rgba(124,107,255,.25);
+      padding: 3px 12px;
+      border-radius: 99px;
+      display: inline-block;
+      margin-bottom: 12px;
+    }
+    .cl-entry {
+      background: var(--surface2);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      padding: 12px 16px;
+      margin-bottom: 8px;
+      font-size: .88rem;
+      line-height: 1.6;
+    }
+    .cl-entry .change { color: var(--text); font-weight: 600; }
+    .cl-entry .meta { color: var(--text-muted); margin-top: 3px; font-size: .82rem; }
+    .cl-entry .meta span { margin-right: 14px; }
+    .cl-entry .meta .role-tag { color: var(--accent2); }
+
+    /* ── toast ──────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      background: var(--success);
+      color: #000;
+      padding: 12px 22px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: .9rem;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity .3s, transform .3s;
+      pointer-events: none;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ── loading ─────────────────────────────────────────────── */
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── empty state ─────────────────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 24px;
+      color: var(--text-muted);
+    }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 16px; }
+    .empty-state p { font-size: .95rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="logo">💡</span>
+  <div>
+    <h1>Ideas → Role Prompt Generator</h1>
+    <p>Transform any idea into a structured, role-based software development system</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- ── Input ─────────────────────────────────────────────── -->
+  <div class="idea-card">
+    <label for="ideaInput">Your Idea</label>
+    <textarea id="ideaInput" placeholder="Describe your software idea in one or a few sentences.&#10;&#10;Example: A mobile-friendly web app that lets small teams manage daily standups asynchronously — team members post short text/video updates, others can react and comment."></textarea>
+    <div class="btn-row">
+      <button class="btn-primary" id="generateBtn" onclick="generate()">⚡ Generate System</button>
+      <button class="btn-outline" onclick="loadExample()">📋 Load Example</button>
+      <button class="btn-success" id="downloadBtn" onclick="downloadJSON()" style="display:none">⬇ Download JSON</button>
+    </div>
+  </div>
+
+  <!-- ── Output ─────────────────────────────────────────────── -->
+  <div id="output">
+
+    <!-- 1. Idea Summary -->
+    <div class="section" id="sec-summary">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="title">📋 <span>Idea Summary</span></div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="section-body open" id="body-summary"></div>
+    </div>
+
+    <!-- 2. Roles -->
+    <div class="section" id="sec-roles">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="title">👥 <span>Roles</span> <span class="badge" id="roleCount"></span></div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="section-body open" id="body-roles"></div>
+    </div>
+
+    <!-- 3. Role Prompts -->
+    <div class="section" id="sec-prompts">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="title">💬 <span>Role Prompts</span></div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="section-body open" id="body-prompts"></div>
+    </div>
+
+    <!-- 4. Memory -->
+    <div class="section" id="sec-memory">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="title">🧠 <span>Shared Memory (MEMORY.md)</span></div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="section-body open" id="body-memory"></div>
+    </div>
+
+    <!-- 5. Changelog -->
+    <div class="section" id="sec-changelog">
+      <div class="section-header open" onclick="toggleSection(this)">
+        <div class="title">📝 <span>Changelog</span></div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="section-body open" id="body-changelog"></div>
+    </div>
+
+  </div>
+
+  <!-- empty state -->
+  <div class="empty-state" id="emptyState">
+    <div class="icon">🚀</div>
+    <p>Enter your idea above and click <strong>Generate System</strong> to create<br>role-based prompts, memory, and a changelog.</p>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   DATA — role definitions with icons, responsibilities, deps
+   ═══════════════════════════════════════════════════════════════ */
+const ALL_ROLES = {
+  "Product Manager": {
+    icon: "🗂️",
+    responsibility: "Define the product vision, prioritise features, manage requirements and stakeholder communication.",
+    scope: "Idea validation, user stories, acceptance criteria, roadmap, backlog grooming.",
+    deps: [],
+    keywords: []   // always included
+  },
+  "System Architect": {
+    icon: "🏗️",
+    responsibility: "Design the overall system architecture, data models, API contracts and tech-stack decisions.",
+    scope: "Architecture diagrams, data flow, service boundaries, tech stack selection.",
+    deps: ["Product Manager"],
+    keywords: []   // always included
+  },
+  "Backend Developer": {
+    icon: "⚙️",
+    responsibility: "Implement server-side logic, REST/GraphQL APIs, database access and business rules.",
+    scope: "API endpoints, database schema, authentication, server logic, data processing.",
+    deps: ["System Architect", "Product Manager"],
+    keywords: ["api", "server", "backend", "database", "auth", "login", "data", "storage",
+               "rest", "graphql", "endpoint", "crud", "store", "save", "retrieve"]
+  },
+  "Frontend Developer": {
+    icon: "🖥️",
+    responsibility: "Build the user-facing web interface with HTML, CSS and JavaScript.",
+    scope: "HTML/CSS layout, interactive UI components, client-side routing, API integration.",
+    deps: ["UI/UX Designer", "Backend Developer"],
+    keywords: ["ui", "interface", "web", "page", "button", "form", "screen", "view",
+               "dashboard", "display", "frontend", "html", "css", "react", "vue"]
+  },
+  "UI/UX Designer": {
+    icon: "🎨",
+    responsibility: "Design user experiences, wireframes, visual language and interaction patterns.",
+    scope: "User flows, wireframes, component design, colour palette, typography, accessibility.",
+    deps: ["Product Manager"],
+    keywords: ["design", "ux", "ui", "wireframe", "visual", "layout", "mobile", "responsive",
+               "user experience", "usability", "interface", "look", "feel", "style"]
+  },
+  "QA Engineer": {
+    icon: "🔍",
+    responsibility: "Ensure quality through test planning, manual testing, automated test suites and bug reports.",
+    scope: "Test cases, regression tests, bug reports, acceptance testing, quality gates.",
+    deps: ["Backend Developer", "Frontend Developer"],
+    keywords: ["test", "quality", "qa", "bug", "error", "issue", "validation", "check",
+               "verify", "ensure", "reliable", "stable"]
+  },
+  "DevOps Engineer": {
+    icon: "🚀",
+    responsibility: "Manage CI/CD pipelines, hosting infrastructure, deployment automation and monitoring.",
+    scope: "Docker/containerisation, hosting setup, deployment scripts, environment configuration, monitoring.",
+    deps: ["System Architect", "Backend Developer"],
+    keywords: ["deploy", "hosting", "server", "cloud", "docker", "ci/cd", "devops",
+               "infrastructure", "aws", "gcp", "azure", "kubernetes", "pipeline", "production"]
+  },
+  "AI Engineer": {
+    icon: "🤖",
+    responsibility: "Integrate machine learning models, LLM APIs, recommendation systems or data pipelines.",
+    scope: "Model selection, prompt engineering, API integration, data preprocessing, evaluation.",
+    deps: ["System Architect", "Backend Developer"],
+    keywords: ["ai", "ml", "machine learning", "llm", "gpt", "openai",
+               "nlp", "neural network", "deep learning", "recommendation engine",
+               "sentiment", "chatbot", "ai-powered", "generative", "embeddings"]
+  }
+};
+
+/* ═══════════════════════════════════════════════════════════════
+   HELPERS
+   ═══════════════════════════════════════════════════════════════ */
+function esc(s) {
+  return String(s)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;");
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+function toggleSection(header) {
+  header.classList.toggle("open");
+  const body = header.nextElementSibling;
+  body.classList.toggle("open");
+}
+
+function togglePrompt(header) {
+  header.classList.toggle("open");
+  const body = header.nextElementSibling;
+  body.classList.toggle("open");
+}
+
+// Generic UI keywords — moved to module level to avoid repeated allocation
+const GENERIC_UI_KEYWORDS = ["app", "website", "tool", "platform", "portal", "system", "tracker",
+                              "manager", "dashboard", "chat", "social", "market", "shop"];
+
+// Shared AI-detection regex — used by generateSummary, generateMemory, and FEATURE_MAP
+const IS_AI_REGEX = /\bai\b|\bml\b|llm|gpt|openai|intelligent|smart|predict|recommend/i;
+
+// Feature-map for deriveFeatures() — moved to module level to avoid repeated allocation
+const FEATURE_MAP = [
+  [/auth|login|sign.?in|register|account/, "User authentication and account management"],
+  [/dashboard/, "Overview dashboard with key metrics"],
+  [/notif|alert|remind/, "Notification and reminder system"],
+  [/search|filter|find/, "Search and filtering capabilities"],
+  [/upload|file|attach|image|video|photo/, "File / media upload and management"],
+  [/comment|reply|discuss|thread/, "Commenting and threaded discussions"],
+  [/react|like|vote|rating/, "Reaction and rating system"],
+  [/analytics|report|stats|insight|chart/, "Analytics and reporting"],
+  [/chat|message|dm|inbox/, "Real-time or async messaging"],
+  [/team|collaborate|invite|member/, "Team collaboration and member management"],
+  [/task|todo|checklist|kanban|board/, "Task and progress tracking"],
+  [/calendar|schedule|event|booking/, "Calendar and scheduling"],
+  [/payment|subscription|billing|stripe/, "Payment and subscription management"],
+  [/export|download|csv|pdf/, "Data export and reporting"],
+  [/api|webhook|integration/, "Third-party API and webhook integrations"],
+  [/role|permission|admin|access/, "Role-based access control"],
+  [IS_AI_REGEX, "AI-powered features and recommendations"],
+  [/mobile|responsive/, "Mobile-responsive interface"],
+];
+
+/* ═══════════════════════════════════════════════════════════════
+   ROLE SELECTION — pick roles relevant to the idea
+   ═══════════════════════════════════════════════════════════════ */
+
+/**
+ * Returns true if the lowercase idea text contains the keyword.
+ * For short keywords (≤3 chars) uses word-boundary matching to avoid
+ * false positives (e.g. "ml" inside "html", "ai" inside "email").
+ */
+function matchesKeyword(lowerIdea, kw) {
+  if (kw.length <= 3) {
+    return new RegExp("\\b" + kw + "\\b").test(lowerIdea);
+  }
+  return lowerIdea.includes(kw);
+}
+
+function selectRoles(idea) {
+  const lower = idea.toLowerCase();
+  const selected = [];
+
+  for (const [name, def] of Object.entries(ALL_ROLES)) {
+    if (def.keywords.length === 0) {
+      // always include PM and Architect
+      selected.push(name);
+      continue;
+    }
+    if (def.keywords.some(kw => matchesKeyword(lower, kw))) {
+      selected.push(name);
+    }
+  }
+
+  // Always include Frontend if idea mentions a generic UI keyword
+  if (!selected.includes("Frontend Developer") && GENERIC_UI_KEYWORDS.some(k => lower.includes(k))) {
+    selected.push("Frontend Developer");
+  }
+
+  // Always include UI/UX if Frontend is included
+  if (selected.includes("Frontend Developer") && !selected.includes("UI/UX Designer")) {
+    selected.push("UI/UX Designer");
+  }
+
+  // Ensure deps are included
+  const depCheck = [...selected];
+  for (const name of depCheck) {
+    for (const dep of ALL_ROLES[name].deps) {
+      if (!selected.includes(dep)) selected.push(dep);
+    }
+  }
+
+  // Preserve the canonical order
+  return Object.keys(ALL_ROLES).filter(r => selected.includes(r));
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SUMMARY GENERATION
+   ═══════════════════════════════════════════════════════════════ */
+function generateSummary(idea) {
+  const lower = idea.toLowerCase();
+
+  // Derive target users
+  let users = "General users / teams";
+  if (lower.includes("small team") || lower.includes("startup")) users = "Small teams and startups";
+  else if (lower.includes("enterprise") || lower.includes("company")) users = "Enterprise organisations";
+  else if (lower.includes("student") || lower.includes("school")) users = "Students and educators";
+  else if (lower.includes("developer") || lower.includes("engineer")) users = "Developers and engineers";
+  else if (lower.includes("customer") || lower.includes("client")) users = "Businesses and their customers";
+  else if (lower.includes("freelance")) users = "Freelancers and independent contractors";
+  else if (lower.includes("personal") || lower.includes("individual")) users = "Individual users";
+
+  // Derive scope
+  const isAI = IS_AI_REGEX.test(idea);
+  const isRealtime = /real.?time|live|instant|websocket|streaming/i.test(idea);
+  const isMobile = /mobile|ios|android|phone|app/i.test(idea);
+  const isBackend = /api|server|database|backend|auth|storage/i.test(idea);
+
+  const techScope = ["Web-based MVP (HTML + Vanilla JS)"];
+  if (isBackend) techScope.push("REST API (PHP or Node.js)");
+  if (isAI) techScope.push("AI/LLM API integration");
+  if (isRealtime) techScope.push("Real-time communication layer");
+  if (isMobile) techScope.push("Mobile-responsive layout");
+  techScope.push("Local or lightweight cloud storage");
+
+  // Core features — extract noun phrases or fall back to generic
+  const features = deriveFeatures(idea);
+
+  return {
+    title: titleCase(idea.split(/[.!?]/)[0].trim().slice(0, 80)),
+    explanation: idea.trim(),
+    targetUsers: users,
+    coreFeatures: features,
+    techScope
+  };
+}
+
+function deriveFeatures(idea) {
+  const lower = idea.toLowerCase();
+  const features = [];
+
+  for (const [pattern, label] of FEATURE_MAP) {
+    if (pattern.test(lower)) features.push(label);
+  }
+
+  if (features.length === 0) {
+    features.push(
+      "Core feature management and CRUD operations",
+      "User-facing interface with intuitive navigation",
+      "Data persistence and retrieval",
+      "Basic user authentication"
+    );
+  }
+
+  // Limit to 6
+  return features.slice(0, 6);
+}
+
+function titleCase(s) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MEMORY GENERATION
+   ═══════════════════════════════════════════════════════════════ */
+function generateMemory(idea, summary, roles) {
+  const isAI = IS_AI_REGEX.test(idea);
+  const isBackend = /api|server|database|backend|auth|storage/i.test(idea);
+  const isMobile = /mobile|ios|android|phone/i.test(idea);
+
+  const stack = ["HTML5, CSS3, Vanilla JS (frontend)"];
+  if (isBackend) stack.push("PHP or Node.js (backend API)");
+  if (isAI) stack.push("OpenAI / LLM API (AI features)");
+  stack.push("SQLite or flat JSON (local storage / MVP DB)");
+
+  const archDecisions = [
+    "Single-page application architecture for MVP speed",
+    "RESTful API design with clear endpoint naming",
+    "Component-based UI without heavy framework dependencies",
+  ];
+  if (isAI) archDecisions.push("AI responses streamed via SSE or batched via REST");
+  if (isMobile) archDecisions.push("Mobile-first responsive CSS using flexbox/grid");
+
+  const constraints = [
+    "MVP scope only — no premature optimisation",
+    "Vanilla JS preferred over heavy frameworks for simplicity",
+    "All roles share this MEMORY.md as the single source of truth",
+    "Changelog must be updated after each role completes their deliverable",
+  ];
+
+  return {
+    projectSummary: summary.explanation,
+    architectureDecisions: archDecisions,
+    techStack: stack,
+    currentProgress: ["Idea defined", "Roles assigned", "Prompts generated — development not yet started"],
+    keyConstraints: constraints,
+    roleList: roles
+  };
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   PROMPT GENERATION
+   ═══════════════════════════════════════════════════════════════ */
+function generatePrompt(roleName, roleDef, idea, summary, memory) {
+  const memBlock = buildMemBlock(memory);
+  const deps = roleDef.deps.length
+    ? roleDef.deps.map(d => `  - ${d}: provides ${depOutput(d)}`).join("\n")
+    : "  - None (this role leads)";
+
+  const task = roleTask(roleName, idea, summary);
+  const outputFormat = roleOutputFormat(roleName);
+  const constraints = roleConstraints(roleName);
+
+  return `ROLE: ${roleName}
+
+════════════════════════════════════════
+CONTEXT
+════════════════════════════════════════
+
+[MEMORY]
+${memBlock}
+
+[DEPENDENCIES]
+${deps}
+
+════════════════════════════════════════
+TASK
+════════════════════════════════════════
+
+${task}
+
+════════════════════════════════════════
+OUTPUT FORMAT
+════════════════════════════════════════
+
+${outputFormat}
+
+════════════════════════════════════════
+CONSTRAINTS
+════════════════════════════════════════
+
+${constraints}`;
+}
+
+function buildMemBlock(mem) {
+  return `Project: ${mem.projectSummary.slice(0, 120)}${mem.projectSummary.length > 120 ? "…" : ""}
+Tech Stack: ${mem.techStack.join(", ")}
+Architecture: ${mem.architectureDecisions[0]}
+Progress: ${mem.currentProgress.join(" → ")}
+Constraints: ${mem.keyConstraints[0]}`;
+}
+
+function depOutput(dep) {
+  const map = {
+    "Product Manager": "requirements, user stories, and acceptance criteria",
+    "System Architect": "architecture decisions, data models, and API contracts",
+    "Backend Developer": "REST API endpoints, authentication, and database schema",
+    "Frontend Developer": "component structure and page layout",
+    "UI/UX Designer": "wireframes, user flows, and visual design specs",
+    "QA Engineer": "test cases and quality reports",
+    "DevOps Engineer": "deployment config and infrastructure specs",
+    "AI Engineer": "AI/ML integration and model selection"
+  };
+  return map[dep] || "their deliverables";
+}
+
+function roleTask(roleName, idea, summary) {
+  const tasks = {
+    "Product Manager": `Based on the following idea, produce a complete product requirements document (PRD) for the MVP.
+
+Idea: "${idea}"
+
+Your deliverables:
+1. One-paragraph product overview
+2. User personas (2–3 max)
+3. User stories in the format "As a [user], I want to [action] so that [benefit]" — at least 8 stories
+4. Acceptance criteria for each story
+5. Out-of-scope items (what is NOT in the MVP)
+6. Prioritised feature list (P1/P2/P3)`,
+
+    "System Architect": `Design the complete technical architecture for the MVP.
+
+Idea: "${idea}"
+
+Your deliverables:
+1. System architecture diagram description (components and connections)
+2. Data models / entity definitions with fields and types
+3. API endpoint list (method, path, description, request/response shape)
+4. Tech stack justification
+5. Key architectural decisions and their rationale
+6. Scalability notes (what to watch for post-MVP)`,
+
+    "Backend Developer": `Implement the core server-side logic for the MVP.
+
+Idea: "${idea}"
+
+Your deliverables:
+1. Project folder structure
+2. Database schema (SQL or JSON schema)
+3. Core API endpoints with full code (PHP or Node.js)
+4. Authentication middleware if required
+5. Input validation and error handling
+6. README with setup instructions`,
+
+    "Frontend Developer": `Build the complete user-facing web interface for the MVP.
+
+Idea: "${idea}"
+
+Your deliverables:
+1. Complete index.html with semantic structure
+2. CSS stylesheet (responsive, mobile-friendly)
+3. JavaScript for interactivity and API calls
+4. All major screens / views
+5. Loading states and error messages
+6. No build step required — runs directly in browser`,
+
+    "UI/UX Designer": `Create the complete UX design specification for the MVP.
+
+Idea: "${idea}"
+
+Your deliverables:
+1. User flow diagrams (step-by-step paths for key actions)
+2. Wireframes described in structured text (screen by screen)
+3. Component inventory (list every UI component needed)
+4. Visual design tokens: colour palette, typography, spacing scale
+5. Interaction design notes (hover states, transitions, feedback)
+6. Accessibility requirements (WCAG AA minimum)`,
+
+    "QA Engineer": `Create a comprehensive quality assurance plan for the MVP.
+
+Idea: "${idea}"
+
+Your deliverables:
+1. Test plan document (scope, approach, entry/exit criteria)
+2. Test cases table (ID, description, steps, expected result, priority)
+3. Edge cases and negative test scenarios
+4. Bug report template
+5. Regression checklist
+6. Definition of done (DoD) for each feature`,
+
+    "DevOps Engineer": `Set up the deployment and infrastructure for the MVP.
+
+Idea: "${idea}"
+
+Your deliverables:
+1. Docker Compose or deployment script
+2. Environment variables list with descriptions
+3. CI/CD pipeline configuration (GitHub Actions or equivalent)
+4. Hosting recommendation with estimated cost
+5. Monitoring and logging setup
+6. Rollback procedure`,
+
+    "AI Engineer": `Design and implement the AI/ML components for the MVP.
+
+Idea: "${idea}"
+
+Your deliverables:
+1. AI feature specification (what the model does, inputs, outputs)
+2. Prompt templates for any LLM calls (with system/user roles)
+3. API integration code (OpenAI or equivalent)
+4. Error handling and fallback behaviour
+5. Cost estimate for AI usage at MVP scale
+6. Evaluation criteria for AI output quality`
+  };
+
+  return tasks[roleName] || `Complete the ${roleName} responsibilities for the following idea:\n\n"${idea}"`;
+}
+
+function roleOutputFormat(roleName) {
+  const formats = {
+    "Product Manager": "Structured markdown document with clear headings, user stories table, and prioritised feature list.",
+    "System Architect": "Markdown document with ASCII/text architecture diagram, entity tables, and API endpoint table.",
+    "Backend Developer": "Working code files with inline comments. Include a file tree at the top.",
+    "Frontend Developer": "Complete, runnable HTML/CSS/JS files. Must work by opening index.html directly in a browser.",
+    "UI/UX Designer": "Structured markdown with component inventory table, colour tokens, and screen-by-screen wireframe descriptions.",
+    "QA Engineer": "Markdown document with test cases table (ID | Description | Steps | Expected | Priority) and bug report template.",
+    "DevOps Engineer": "Configuration files (Dockerfile, docker-compose.yml, .github/workflows/ci.yml) plus setup documentation.",
+    "AI Engineer": "Prompt templates in a structured format, integration code with error handling, and evaluation rubric."
+  };
+  return formats[roleName] || "Clear, structured output relevant to the role.";
+}
+
+function roleConstraints(roleName) {
+  const base = [
+    "• MVP scope only — no over-engineering",
+    "• Default stack: HTML, Vanilla JS, optional PHP backend",
+    "• Keep all outputs simple and actionable",
+    "• Reference MEMORY.md for shared context",
+    "• Update CHANGELOG.md after delivering outputs"
+  ];
+
+  const extra = {
+    "Frontend Developer": ["• No frameworks (no React, Vue, Angular)", "• Must run without a build step"],
+    "Backend Developer": ["• PHP or Node.js preferred", "• Use standard libraries only"],
+    "AI Engineer": ["• Use the OpenAI Chat Completions API format", "• Include rate-limit and error handling"],
+    "DevOps Engineer": ["• Assume budget-constrained hosting (VPS or free tier)", "• Keep infrastructure simple for MVP"]
+  };
+
+  const all = [...base, ...(extra[roleName] || [])];
+  return all.join("\n");
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   CHANGELOG GENERATION
+   ═══════════════════════════════════════════════════════════════ */
+function generateChangelog(roles) {
+  const now = new Date();
+  const date = now.toISOString().split("T")[0];
+
+  const v01 = [
+    { change: "Idea captured and summarised", role: "Product Manager", reason: "Define product vision and scope" },
+    { change: "System roles identified and defined", role: "System Architect", reason: "Establish development structure and responsibilities" }
+  ];
+
+  const v02 = [
+    { change: "MEMORY.md created as shared context file", role: "System Architect", reason: "Provide single source of truth for all roles" },
+    { change: "Role prompts generated for all active roles", role: "Product Manager", reason: "Enable structured, parallel development" }
+  ];
+
+  const v03 = [];
+  if (roles.includes("UI/UX Designer")) {
+    v03.push({ change: "UX wireframes and design spec drafted", role: "UI/UX Designer", reason: "Provide visual direction for frontend implementation" });
+  }
+  if (roles.includes("System Architect")) {
+    v03.push({ change: "Architecture diagram and data models defined", role: "System Architect", reason: "Align backend and frontend on data structure" });
+  }
+  if (roles.includes("Backend Developer")) {
+    v03.push({ change: "API endpoints and database schema specified", role: "Backend Developer", reason: "Establish contract for frontend integration" });
+  }
+
+  const v04 = [];
+  if (roles.includes("Frontend Developer")) {
+    v04.push({ change: "HTML/CSS/JS interface scaffolded", role: "Frontend Developer", reason: "Create base UI structure for all features" });
+  }
+  if (roles.includes("Backend Developer")) {
+    v04.push({ change: "Core API routes implemented and tested locally", role: "Backend Developer", reason: "Provide working endpoints for UI integration" });
+  }
+  if (roles.includes("AI Engineer")) {
+    v04.push({ change: "AI prompt templates and API integration drafted", role: "AI Engineer", reason: "Enable AI-powered features in the application" });
+  }
+
+  const v05 = [];
+  if (roles.includes("QA Engineer")) {
+    v05.push({ change: "Test plan and test cases written for MVP features", role: "QA Engineer", reason: "Define quality gates before launch" });
+  }
+  if (roles.includes("DevOps Engineer")) {
+    v05.push({ change: "Deployment pipeline and hosting configuration set up", role: "DevOps Engineer", reason: "Automate deployment and ensure reproducible environments" });
+  }
+  if (roles.includes("Frontend Developer")) {
+    v05.push({ change: "UI polished and connected to backend API", role: "Frontend Developer", reason: "Deliver complete end-to-end user experience" });
+  }
+
+  const versions = [
+    { version: "0.1", date, entries: v01 },
+    { version: "0.2", date, entries: v02 }
+  ];
+  if (v03.length) versions.push({ version: "0.3", date, entries: v03 });
+  if (v04.length) versions.push({ version: "0.4", date, entries: v04 });
+  if (v05.length) versions.push({ version: "0.5", date, entries: v05 });
+
+  return versions;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RENDER FUNCTIONS
+   ═══════════════════════════════════════════════════════════════ */
+function renderSummary(s) {
+  return `
+    <div class="summary-title">${esc(s.title)}</div>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <h4>Explanation</h4>
+        <p>${esc(s.explanation)}</p>
+      </div>
+      <div class="summary-item">
+        <h4>Target Users</h4>
+        <p>${esc(s.targetUsers)}</p>
+      </div>
+      <div class="summary-item">
+        <h4>Core Features</h4>
+        <ul>${s.coreFeatures.map(f => `<li>${esc(f)}</li>`).join("")}</ul>
+      </div>
+      <div class="summary-item">
+        <h4>Technical Scope (MVP)</h4>
+        <ul>${s.techScope.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
+      </div>
+    </div>`;
+}
+
+function renderRoles(roles) {
+  return `<div class="role-list">${roles.map(name => {
+    const r = ALL_ROLES[name];
+    const deps = r.deps.length
+      ? r.deps.map(d => `<span class="dep-badge">${esc(d)}</span>`).join("")
+      : `<span style="color:var(--text-muted);font-size:.82rem">None (leads)</span>`;
+    return `
+      <div class="role-card">
+        <div class="role-card-header">
+          <span class="role-icon">${r.icon}</span>
+          <span class="role-name">${esc(name)}</span>
+        </div>
+        <div class="role-detail">
+          <strong>Responsibility:</strong> ${esc(r.responsibility)}<br>
+          <strong>Scope:</strong> ${esc(r.scope)}
+        </div>
+        <div class="role-deps" style="margin-top:10px">
+          <span style="font-size:.8rem;color:var(--text-muted);margin-right:6px">Depends on:</span>${deps}
+        </div>
+      </div>`;
+  }).join("")}</div>`;
+}
+
+function renderPrompts(roles, idea, summary, memory) {
+  return `<div class="prompt-list">${roles.map((name, i) => {
+    const r = ALL_ROLES[name];
+    const prompt = generatePrompt(name, r, idea, summary, memory);
+    const id = `prompt-${i}`;
+    return `
+      <div class="prompt-card">
+        <div class="prompt-card-header" onclick="togglePrompt(this)">
+          <div class="role-label">${r.icon} <span>${esc(name)}</span></div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <button class="copy-btn" id="copy-${id}" onclick="copyPrompt(event,'${id}')">Copy</button>
+            <span class="chevron" style="color:var(--text-muted)">▼</span>
+          </div>
+        </div>
+        <div class="prompt-body open" id="${id}">
+          <pre>${esc(prompt)}</pre>
+        </div>
+      </div>`;
+  }).join("")}</div>`;
+}
+
+function renderMemory(mem) {
+  return `
+    <div class="memory-grid">
+      <div class="mem-item">
+        <h4>Project Summary</h4>
+        <p>${esc(mem.projectSummary)}</p>
+      </div>
+      <div class="mem-item">
+        <h4>Tech Stack</h4>
+        <ul>${mem.techStack.map(s => `<li>${esc(s)}</li>`).join("")}</ul>
+      </div>
+      <div class="mem-item">
+        <h4>Architecture Decisions</h4>
+        <ul>${mem.architectureDecisions.map(a => `<li>${esc(a)}</li>`).join("")}</ul>
+      </div>
+      <div class="mem-item">
+        <h4>Key Constraints</h4>
+        <ul>${mem.keyConstraints.map(c => `<li>${esc(c)}</li>`).join("")}</ul>
+      </div>
+      <div class="mem-item">
+        <h4>Current Progress</h4>
+        <ul>${mem.currentProgress.map(p => `<li>${esc(p)}</li>`).join("")}</ul>
+      </div>
+      <div class="mem-item">
+        <h4>Active Roles</h4>
+        <ul>${mem.roleList.map(r => `<li>${esc(r)}</li>`).join("")}</ul>
+      </div>
+    </div>`;
+}
+
+function renderChangelog(versions) {
+  return versions.map(v => `
+    <div class="changelog-version">
+      <div class="version-tag">Version ${esc(v.version)} — ${esc(v.date)}</div>
+      ${v.entries.map(e => `
+        <div class="cl-entry">
+          <div class="change">✦ ${esc(e.change)}</div>
+          <div class="meta">
+            <span class="role-tag">👤 ${esc(e.role)}</span>
+            <span>💬 ${esc(e.reason)}</span>
+          </div>
+        </div>`).join("")}
+    </div>`).join("");
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   COPY PROMPT
+   ═══════════════════════════════════════════════════════════════ */
+function copyPrompt(event, id) {
+  event.stopPropagation();
+  const pre = document.querySelector(`#${id} pre`);
+  if (!pre) return;
+  navigator.clipboard.writeText(pre.textContent).then(() => {
+    const btn = document.getElementById(`copy-${id}`);
+    btn.textContent = "Copied!";
+    btn.classList.add("copied");
+    setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1800);
+    showToast("Prompt copied to clipboard!");
+  });
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DOWNLOAD JSON
+   ═══════════════════════════════════════════════════════════════ */
+let _lastJSON = null;
+
+function downloadJSON() {
+  if (!_lastJSON) return;
+  const blob = new Blob([JSON.stringify(_lastJSON, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "role-prompt-system.json";
+  a.click();
+  showToast("JSON downloaded!");
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   MAIN GENERATE
+   ═══════════════════════════════════════════════════════════════ */
+function generate() {
+  const idea = document.getElementById("ideaInput").value.trim();
+  if (!idea) {
+    showToast("Please enter an idea first.");
+    return;
+  }
+
+  const btn = document.getElementById("generateBtn");
+  btn.innerHTML = '<span class="spinner"></span> Generating…';
+  btn.disabled = true;
+
+  // Slight delay for UX feel
+  setTimeout(() => {
+    try {
+      const roles    = selectRoles(idea);
+      const summary  = generateSummary(idea);
+      const memory   = generateMemory(idea, summary, roles);
+      const changelog = generateChangelog(roles);
+
+      document.getElementById("body-summary").innerHTML   = renderSummary(summary);
+      document.getElementById("body-roles").innerHTML     = renderRoles(roles);
+      document.getElementById("roleCount").textContent    = roles.length;
+      document.getElementById("body-prompts").innerHTML   = renderPrompts(roles, idea, summary, memory);
+      document.getElementById("body-memory").innerHTML    = renderMemory(memory);
+      document.getElementById("body-changelog").innerHTML = renderChangelog(changelog);
+
+      // Build JSON payload
+      _lastJSON = {
+        idea_summary: summary,
+        roles: roles.map(name => ({
+          name,
+          icon: ALL_ROLES[name].icon,
+          responsibility: ALL_ROLES[name].responsibility,
+          scope: ALL_ROLES[name].scope,
+          dependencies: ALL_ROLES[name].deps
+        })),
+        prompts: roles.map(name => ({
+          role: name,
+          prompt: generatePrompt(name, ALL_ROLES[name], idea, summary, memory)
+        })),
+        memory,
+        changelog
+      };
+
+      document.getElementById("output").style.display = "block";
+      document.getElementById("emptyState").style.display = "none";
+      document.getElementById("downloadBtn").style.display = "inline-block";
+    } catch (err) {
+      showToast("Error generating output. Please try again.");
+      console.error(err);
+    } finally {
+      btn.innerHTML = "⚡ Generate System";
+      btn.disabled = false;
+    }
+  }, 300);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   EXAMPLE
+   ═══════════════════════════════════════════════════════════════ */
+function loadExample() {
+  document.getElementById("ideaInput").value =
+    "A mobile-friendly web app that lets small teams manage daily standups asynchronously. " +
+    "Team members post short text or video updates, others can react and comment. " +
+    "Includes a dashboard showing team progress, an AI-powered summary of all updates, " +
+    "and a simple admin panel for managing members and roles.";
+  document.getElementById("ideaInput").focus();
+}
+
+/* ── allow Enter to submit in textarea with Ctrl/Cmd ── */
+document.getElementById("ideaInput").addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") generate();
+});
+</script>
+</body>
+</html>
