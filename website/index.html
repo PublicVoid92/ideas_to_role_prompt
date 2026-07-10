@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Role Prompt Pack Generator</title>
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: #121a33;
+      --text: #eef2ff;
+      --muted: #b7c0e0;
+      --primary: #6ea8fe;
+      --primary-2: #8ec5ff;
+      --ok: #7ee787;
+      --warn: #ffda6a;
+      --border: #253057;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 800px at 20% -20%, #1a2450 0%, var(--bg) 45%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1050px;
+      margin: 0 auto;
+      padding: 28px 18px 48px;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      line-height: 1.2;
+    }
+
+    .sub {
+      margin: 0 0 18px;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .card {
+      background: color-mix(in srgb, var(--panel) 88%, black 12%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+      box-shadow: 0 10px 24px rgba(0,0,0,.25);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+    }
+
+    label {
+      display: block;
+      margin: 0 0 6px;
+      font-size: .9rem;
+      color: var(--muted);
+    }
+
+    select, input {
+      width: 100%;
+      background: #0d1430;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: .95rem;
+      outline: none;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    button {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-weight: 600;
+      color: #04112d;
+      background: linear-gradient(180deg, var(--primary-2), var(--primary));
+      cursor: pointer;
+    }
+
+    button.secondary {
+      color: var(--text);
+      background: #18244a;
+    }
+
+    button:hover { filter: brightness(1.04); }
+
+    .status {
+      min-height: 1.2em;
+      margin-top: 10px;
+      font-size: .9rem;
+      color: var(--muted);
+    }
+
+    .status.ok { color: var(--ok); }
+    .status.warn { color: var(--warn); }
+
+    pre {
+      margin: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+      background: #0a1128;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      max-height: 60vh;
+      overflow: auto;
+      line-height: 1.45;
+      font-size: .92rem;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: .86rem;
+      margin-top: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Role Prompt Pack Generator</h1>
+    <p class="sub">
+      Select a project template, optionally paste your GitHub repository URL, then copy or download the prompt pack.
+      Different projects generate different prompt content and download filenames.
+    </p>
+
+    <section class="card controls">
+      <div>
+        <label for="projectSelect">Project Template</label>
+        <select id="projectSelect"></select>
+      </div>
+
+      <div>
+        <label for="repoInput">Repository URL (optional, used in prompt header)</label>
+        <input id="repoInput" type="url" placeholder="https://github.com/owner/repo" />
+        <div class="hint">Tip: You can also preselect via URL param: <code>?project=review-dashboard</code></div>
+      </div>
+
+      <div class="actions">
+        <button id="copyBtn" type="button">Copy Prompt</button>
+        <button id="downloadBtn" type="button">Download .md</button>
+        <button id="resetBtn" type="button" class="secondary">Reset</button>
+      </div>
+
+      <div id="status" class="status" aria-live="polite"></div>
+    </section>
+
+    <section class="card">
+      <pre id="promptPreview"></pre>
+    </section>
+  </div>
+
+  <script>
+    const PROMPTS = {
+      "review-dashboard": {
+        label: "Review Intelligence Dashboard (Credits)",
+        filename: "ROLE_PROMPT_PACK_review-dashboard.md",
+        content: ({ repoUrl }) => `# Multi-Role Prompt Pack — Review Intelligence Dashboard (Credit-Based)\n\n## Project Context\nBuild an MVP web dashboard to fetch business/product reviews, analyze sentiment & trends, generate AI insights, and export reports using a **pay-per-use credit model** (no subscription).\n\nRepo: ${repoUrl || "<your-repo-url>"}\n\nTech stack:\n- Backend: Laravel REST API, MySQL, Laravel Queue (Redis/DB), Sanctum\n- Frontend: React + Bootstrap + Chart.js + Axios\n- Features: Auth, Wallet/Credits, Async jobs, Dashboard analytics, AI insights, CSV export (PDF optional)\n\n---\n\n## Included Roles\n- Product Manager\n- System Architect\n- Backend Developer\n- Frontend Developer\n- UI/UX Designer\n- QA Engineer\n- AI Engineer\n\n---\n\n## Product Manager\n- Define MVP scope and non-goals\n- Set credit pricing per action\n- Define acceptance criteria for monetized flows\n\n## System Architect\n- Design modular Laravel architecture\n- Enforce pre-deduction credit checks\n- Queue-heavy operations async\n\n## Backend Developer\n- Implement wallet + transaction ledger\n- Build fetch/analyze/insight/export endpoints\n- Add role middleware and ownership policies\n\n## Frontend Developer\n- Build wallet/top-up UI\n- Build dashboard charts and review table\n- Add copy-safe error states for insufficient credits\n\n## UI/UX Designer\n- Wireframes for auth, wallet, query, dashboard\n- Make credit usage transparent before actions\n\n## QA Engineer\n- Validate no-negative-balance and concurrency safety\n- Verify queue, insights, export, and access controls\n\n## AI Engineer\n- Implement baseline sentiment + insight summaries\n- Add prompt/token cost controls and caching\n\n---\n\n## Guardrails\n1. MVP first, avoid overengineering\n2. Audit every credit transaction\n3. Reject insufficient balance before processing\n4. Keep modules decoupled and testable\n`
+      },
+
+      "ecommerce-recommender": {
+        label: "E-commerce Recommender Platform",
+        filename: "ROLE_PROMPT_PACK_ecommerce-recommender.md",
+        content: ({ repoUrl }) => `# Multi-Role Prompt Pack — E-commerce Recommender Platform\n\n## Project Context\nBuild an MVP recommendation platform that suggests products based on behavior, catalog metadata, and lightweight ML/AI heuristics.\n\nRepo: ${repoUrl || "<your-repo-url>"}\n\n## Included Roles\n- Product Manager\n- System Architect\n- Backend Developer\n- Frontend Developer\n- UI/UX Designer\n- QA Engineer\n- AI Engineer\n\n## Core Outcomes\n- Personalized product recommendations\n- Explainable recommendation reasons\n- Performance + relevance tracking\n\n## Key Deliverables by Role\n- PM: KPI definition (CTR, CVR, add-to-cart lift)\n- Architect: event pipeline + scoring architecture\n- Backend: APIs for recommendation retrieval and feedback capture\n- Frontend: recommendation widgets and feedback controls\n- UX: placement and interaction hierarchy\n- QA: relevance, latency, and fallback behavior tests\n- AI: baseline ranking model + reranking heuristics\n`
+      },
+
+      "saas-analytics": {
+        label: "SaaS Analytics Dashboard",
+        filename: "ROLE_PROMPT_PACK_saas-analytics.md",
+        content: ({ repoUrl }) => `# Multi-Role Prompt Pack — SaaS Analytics Dashboard\n\n## Project Context\nBuild an analytics dashboard MVP for SaaS teams to monitor usage, retention, revenue trends, and actionable insights.\n\nRepo: ${repoUrl || "<your-repo-url>"}\n\n## Included Roles\n- Product Manager\n- System Architect\n- Backend Developer\n- Frontend Developer\n- UI/UX Designer\n- QA Engineer\n\n## Outcomes\n- Unified metrics view\n- Fast, reliable charting and filters\n- Exportable reports\n\n## Deliverables\n- PM: success metrics and reporting cadence\n- Architect: data model and aggregation strategy\n- Backend: metric APIs and export pipeline\n- Frontend: filters, charts, and drill-down screens\n- UX: dashboard layout and empty/loading/error states\n- QA: data correctness and cross-filter consistency\n`
+      }
+    };
+
+    const els = {
+      projectSelect: document.getElementById('projectSelect'),
+      repoInput: document.getElementById('repoInput'),
+      promptPreview: document.getElementById('promptPreview'),
+      copyBtn: document.getElementById('copyBtn'),
+      downloadBtn: document.getElementById('downloadBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      status: document.getElementById('status')
+    };
+
+    function getProjectFromUrl() {
+      const p = new URLSearchParams(window.location.search).get('project');
+      return p && PROMPTS[p] ? p : null;
+    }
+
+    function setStatus(message, type = '') {
+      els.status.textContent = message;
+      els.status.className = `status ${type}`.trim();
+    }
+
+    function safeRepo(url) {
+      const trimmed = (url || '').trim();
+      if (!trimmed) return '';
+      try {
+        const u = new URL(trimmed);
+        if (u.protocol !== 'http:' && u.protocol !== 'https:') return '';
+        return trimmed;
+      } catch {
+        return '';
+      }
+    }
+
+    function currentKey() {
+      return els.projectSelect.value;
+    }
+
+    function currentPrompt() {
+      const key = currentKey();
+      const project = PROMPTS[key];
+      return project.content({ repoUrl: safeRepo(els.repoInput.value) });
+    }
+
+    function renderPrompt() {
+      els.promptPreview.textContent = currentPrompt();
+      const key = currentKey();
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.set('project', key);
+      history.replaceState({}, '', nextUrl);
+    }
+
+    function downloadPrompt() {
+      const key = currentKey();
+      const project = PROMPTS[key];
+      const blob = new Blob([currentPrompt()], { type: 'text/markdown;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = project.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      setStatus(`Downloaded ${project.filename}`, 'ok');
+    }
+
+    async function copyPrompt() {
+      try {
+        await navigator.clipboard.writeText(currentPrompt());
+        setStatus('Prompt copied to clipboard.', 'ok');
+      } catch {
+        setStatus('Copy failed. Please copy manually from preview.', 'warn');
+      }
+    }
+
+    function init() {
+      const keys = Object.keys(PROMPTS);
+      keys.forEach((key) => {
+        const opt = document.createElement('option');
+        opt.value = key;
+        opt.textContent = PROMPTS[key].label;
+        els.projectSelect.appendChild(opt);
+      });
+
+      const initialProject = getProjectFromUrl() || 'review-dashboard';
+      els.projectSelect.value = initialProject;
+
+      els.projectSelect.addEventListener('change', () => {
+        renderPrompt();
+        setStatus('Project template updated.');
+      });
+
+      els.repoInput.addEventListener('input', () => {
+        renderPrompt();
+      });
+
+      els.copyBtn.addEventListener('click', copyPrompt);
+      els.downloadBtn.addEventListener('click', downloadPrompt);
+      els.resetBtn.addEventListener('click', () => {
+        els.repoInput.value = '';
+        els.projectSelect.value = 'review-dashboard';
+        renderPrompt();
+        setStatus('Reset complete.');
+      });
+
+      renderPrompt();
+      setStatus('Ready. Select a project, then copy or download.');
+    }
+
+    init();
+  </script>
+</body>
+</html>
