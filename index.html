@@ -43,6 +43,38 @@
 
     .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
 
+    /* ── nav links ─────────────────────────────────────────── */
+    .nav-links {
+      display: flex;
+      gap: 12px;
+      margin-top: 16px;
+      flex-wrap: wrap;
+    }
+    .nav-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: .9rem;
+      font-weight: 500;
+      transition: all .2s;
+    }
+    .nav-links a:hover {
+      border-color: var(--accent2);
+      color: var(--accent2);
+      background: rgba(94, 234, 212, 0.05);
+    }
+    .nav-links a.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(124, 107, 255, 0.1);
+    }
+
     /* ── input card ─────────────────────────────────────────── */
     .idea-card {
       background: var(--surface);
@@ -335,6 +367,10 @@
   <div>
     <h1>Ideas → Role Prompt Generator</h1>
     <p>Transform any idea into a structured, role-based software development system</p>
+    <div class="nav-links">
+      <a href="./" class="active">🎯 Custom Ideas</a>
+      <a href="./website/">📦 Template Packs</a>
+    </div>
   </div>
 </header>
 
@@ -343,7 +379,7 @@
   <!-- ── Input ─────────────────────────────────────────────── -->
   <div class="idea-card">
     <label for="ideaInput">Your Idea</label>
-    <textarea id="ideaInput" placeholder="Describe your software idea in one or a few sentences.&#10;&#10;Example: A mobile-friendly web app that lets small teams manage daily standups asynchronously — team members post short text/video updates, others can react and comment."></textarea>
+    <textarea id="ideaInput" placeholder="Describe your software idea in one or a few sentences.&#10;&#10;Example: A mobile-friendly web app that lets small teams manage daily standups asynchronously with voice messages and team insights."></textarea>
     <div class="btn-row">
       <button class="btn-primary" id="generateBtn" onclick="generate()">⚡ Generate System</button>
       <button class="btn-outline" onclick="loadExample()">📋 Load Example</button>
@@ -542,7 +578,7 @@ const FEATURE_MAP = [
 
 /* ═══════════════════════════════════════════════════════════════
    ROLE SELECTION — pick roles relevant to the idea
-   ═══════════════════════════════════════════════════════════════ */
+   ════════════════════════════════════════════���══════════════════ */
 
 /**
  * Returns true if the lowercase idea text contains the keyword.
@@ -998,189 +1034,165 @@ function renderRoles(roles) {
           <span class="role-icon">${r.icon}</span>
           <span class="role-name">${esc(name)}</span>
         </div>
-        <div class="role-detail">
-          <strong>Responsibility:</strong> ${esc(r.responsibility)}<br>
-          <strong>Scope:</strong> ${esc(r.scope)}
+        <div class="role-detail">${esc(r.responsibility)}</div>
+        <div class="role-deps">
+          <strong>Depends on:</strong> ${deps}
         </div>
-        <div class="role-deps" style="margin-top:10px">
-          <span style="font-size:.8rem;color:var(--text-muted);margin-right:6px">Depends on:</span>${deps}
-        </div>
-      </div>`;
+      </div>
+    `;
   }).join("")}</div>`;
 }
 
-function renderPrompts(roles, idea, summary, memory) {
-  return `<div class="prompt-list">${roles.map((name, i) => {
-    const r = ALL_ROLES[name];
-    const prompt = generatePrompt(name, r, idea, summary, memory);
-    const id = `prompt-${i}`;
-    return `
-      <div class="prompt-card">
-        <div class="prompt-card-header" onclick="togglePrompt(this)">
-          <div class="role-label">${r.icon} <span>${esc(name)}</span></div>
-          <div style="display:flex;gap:8px;align-items:center">
-            <button class="copy-btn" id="copy-${id}" onclick="copyPrompt(event,'${id}')">Copy</button>
-            <span class="chevron" style="color:var(--text-muted)">▼</span>
-          </div>
-        </div>
-        <div class="prompt-body open" id="${id}">
-          <pre>${esc(prompt)}</pre>
-        </div>
-      </div>`;
-  }).join("")}</div>`;
+function renderPrompts(prompts) {
+  return `<div class="prompt-list">${prompts.map((p, i) => `
+    <div class="prompt-card">
+      <div class="prompt-card-header" onclick="togglePrompt(this)">
+        <div class="role-label">${p.icon} ${esc(p.role)}</div>
+        <span class="chevron">▼</span>
+      </div>
+      <div class="prompt-body">
+        <pre>${esc(p.prompt)}</pre>
+        <button class="copy-btn" onclick="copyToClip(${i}, this)">📋 Copy</button>
+      </div>
+    </div>
+  `).join("")}</div>`;
 }
 
 function renderMemory(mem) {
   return `
+    <div class="summary-title">Shared Context</div>
     <div class="memory-grid">
       <div class="mem-item">
-        <h4>Project Summary</h4>
+        <h4>Project</h4>
         <p>${esc(mem.projectSummary)}</p>
       </div>
       <div class="mem-item">
         <h4>Tech Stack</h4>
-        <ul>${mem.techStack.map(s => `<li>${esc(s)}</li>`).join("")}</ul>
+        <ul>${mem.techStack.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
       </div>
       <div class="mem-item">
-        <h4>Architecture Decisions</h4>
-        <ul>${mem.architectureDecisions.map(a => `<li>${esc(a)}</li>`).join("")}</ul>
+        <h4>Architecture</h4>
+        <ul>${mem.architectureDecisions.map(d => `<li>${esc(d)}</li>`).join("")}</ul>
       </div>
       <div class="mem-item">
-        <h4>Key Constraints</h4>
-        <ul>${mem.keyConstraints.map(c => `<li>${esc(c)}</li>`).join("")}</ul>
-      </div>
-      <div class="mem-item">
-        <h4>Current Progress</h4>
+        <h4>Progress</h4>
         <ul>${mem.currentProgress.map(p => `<li>${esc(p)}</li>`).join("")}</ul>
       </div>
       <div class="mem-item">
-        <h4>Active Roles</h4>
+        <h4>Constraints</h4>
+        <ul>${mem.keyConstraints.map(c => `<li>${esc(c)}</li>`).join("")}</ul>
+      </div>
+      <div class="mem-item">
+        <h4>Roles</h4>
         <ul>${mem.roleList.map(r => `<li>${esc(r)}</li>`).join("")}</ul>
       </div>
     </div>`;
 }
 
 function renderChangelog(versions) {
-  return versions.map(v => `
+  return `${versions.map(v => `
     <div class="changelog-version">
-      <div class="version-tag">Version ${esc(v.version)} — ${esc(v.date)}</div>
+      <span class="version-tag">v${v.version}</span> — ${v.date}
       ${v.entries.map(e => `
         <div class="cl-entry">
-          <div class="change">✦ ${esc(e.change)}</div>
+          <div class="change">${esc(e.change)}</div>
           <div class="meta">
             <span class="role-tag">👤 ${esc(e.role)}</span>
-            <span>💬 ${esc(e.reason)}</span>
+            <span>${esc(e.reason)}</span>
           </div>
-        </div>`).join("")}
-    </div>`).join("");
+        </div>
+      `).join("")}
+    </div>
+  `).join("")}`;
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   COPY PROMPT
-   ═══════════════════════════════════════════════════════════════ */
-function copyPrompt(event, id) {
-  event.stopPropagation();
-  const pre = document.querySelector(`#${id} pre`);
-  if (!pre) return;
-  navigator.clipboard.writeText(pre.textContent).then(() => {
-    const btn = document.getElementById(`copy-${id}`);
-    btn.textContent = "Copied!";
-    btn.classList.add("copied");
-    setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1800);
-    showToast("Prompt copied to clipboard!");
-  });
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   DOWNLOAD JSON
-   ═══════════════════════════════════════════════════════════════ */
-let _lastJSON = null;
-
-function downloadJSON() {
-  if (!_lastJSON) return;
-  const blob = new Blob([JSON.stringify(_lastJSON, null, 2)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "role-prompt-system.json";
-  a.click();
-  showToast("JSON downloaded!");
-}
-
-/* ═══════════════════════════════════════════════════════════════
-   MAIN GENERATE
-   ═══════════════════════════════════════════════════════════════ */
+   MAIN GENERATE FUNCTION
+   ═══════════════════════════════════���═══════════════════════════ */
 function generate() {
   const idea = document.getElementById("ideaInput").value.trim();
   if (!idea) {
-    showToast("Please enter an idea first.");
+    showToast("Please enter an idea first!");
     return;
   }
 
-  const btn = document.getElementById("generateBtn");
-  btn.innerHTML = '<span class="spinner"></span> Generating…';
-  btn.disabled = true;
+  const roles = selectRoles(idea);
+  const summary = generateSummary(idea);
+  const memory = generateMemory(idea, summary, roles);
+  
+  const prompts = roles.map(role => ({
+    icon: ALL_ROLES[role].icon,
+    role,
+    prompt: generatePrompt(role, ALL_ROLES[role], idea, summary, memory)
+  }));
 
-  // Slight delay for UX feel
-  setTimeout(() => {
-    try {
-      const roles    = selectRoles(idea);
-      const summary  = generateSummary(idea);
-      const memory   = generateMemory(idea, summary, roles);
-      const changelog = generateChangelog(roles);
+  const changelog = generateChangelog(roles);
 
-      document.getElementById("body-summary").innerHTML   = renderSummary(summary);
-      document.getElementById("body-roles").innerHTML     = renderRoles(roles);
-      document.getElementById("roleCount").textContent    = roles.length;
-      document.getElementById("body-prompts").innerHTML   = renderPrompts(roles, idea, summary, memory);
-      document.getElementById("body-memory").innerHTML    = renderMemory(memory);
-      document.getElementById("body-changelog").innerHTML = renderChangelog(changelog);
+  document.getElementById("output").style.display = "block";
+  document.getElementById("emptyState").style.display = "none";
 
-      // Build JSON payload
-      _lastJSON = {
-        idea_summary: summary,
-        roles: roles.map(name => ({
-          name,
-          icon: ALL_ROLES[name].icon,
-          responsibility: ALL_ROLES[name].responsibility,
-          scope: ALL_ROLES[name].scope,
-          dependencies: ALL_ROLES[name].deps
-        })),
-        prompts: roles.map(name => ({
-          role: name,
-          prompt: generatePrompt(name, ALL_ROLES[name], idea, summary, memory)
-        })),
-        memory,
-        changelog
-      };
+  document.getElementById("body-summary").innerHTML = renderSummary(summary);
+  document.getElementById("roleCount").textContent = roles.length;
+  document.getElementById("body-roles").innerHTML = renderRoles(roles);
+  document.getElementById("body-prompts").innerHTML = renderPrompts(prompts);
+  document.getElementById("body-memory").innerHTML = renderMemory(memory);
+  document.getElementById("body-changelog").innerHTML = renderChangelog(changelog);
 
-      document.getElementById("output").style.display = "block";
-      document.getElementById("emptyState").style.display = "none";
-      document.getElementById("downloadBtn").style.display = "inline-block";
-    } catch (err) {
-      showToast("Error generating output. Please try again.");
-      console.error(err);
-    } finally {
-      btn.innerHTML = "⚡ Generate System";
-      btn.disabled = false;
-    }
-  }, 300);
+  window.currentGeneration = { idea, summary, memory, roles, prompts, changelog };
+  document.getElementById("downloadBtn").style.display = "inline-block";
+
+  showToast("System generated!");
 }
 
-/* ═══════════════════════════════════════════════════════════════
-   EXAMPLE
-   ═══════════════════════════════════════════════════════════════ */
+function copyToClip(idx, btn) {
+  const txt = window.currentGeneration.prompts[idx].prompt;
+  navigator.clipboard.writeText(txt).then(() => {
+    btn.textContent = "✓ Copied";
+    setTimeout(() => btn.textContent = "📋 Copy", 2000);
+  }).catch(() => {
+    showToast("Failed to copy");
+  });
+}
+
+function downloadJSON() {
+  if (!window.currentGeneration) {
+    showToast("Generate a system first!");
+    return;
+  }
+  const gen = window.currentGeneration;
+  const data = {
+    idea: gen.idea,
+    summary: gen.summary,
+    roles: gen.roles,
+    memory: gen.memory,
+    prompts: gen.prompts.map(p => ({ role: p.role, prompt: p.prompt })),
+    changelog: gen.changelog,
+    generatedAt: new Date().toISOString()
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `role-prompt-system-${Date.now()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+  showToast("Downloaded as JSON!");
+}
+
 function loadExample() {
-  document.getElementById("ideaInput").value =
-    "A mobile-friendly web app that lets small teams manage daily standups asynchronously. " +
-    "Team members post short text or video updates, others can react and comment. " +
-    "Includes a dashboard showing team progress, an AI-powered summary of all updates, " +
-    "and a simple admin panel for managing members and roles.";
-  document.getElementById("ideaInput").focus();
+  document.getElementById("ideaInput").value = "A mobile-friendly web app that lets small teams manage daily standups asynchronously with voice messages and team insights.";
+  generate();
 }
 
-/* ── allow Enter to submit in textarea with Ctrl/Cmd ── */
-document.getElementById("ideaInput").addEventListener("keydown", e => {
-  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") generate();
+// Auto-load on page load if there's a hash
+window.addEventListener("load", () => {
+  const hash = window.location.hash.slice(1);
+  if (hash) {
+    document.getElementById("ideaInput").value = decodeURIComponent(hash);
+    generate();
+  }
 });
 </script>
 </body>
